@@ -8,6 +8,11 @@ public interface UserService {
     User registerUser(String email, String password, String name);
 
     /**
+     * Создаёт пользователя с ролью библиотекаря (LIBRARIAN).
+     */
+    User registerLibrarian(String email, String password, String name);
+
+    /**
      * Проверяет учётные данные. Возвращает пользователя при совпадении пароля, иначе пустой Optional.
      */
     Optional<User> authenticate(String email, String rawPassword);

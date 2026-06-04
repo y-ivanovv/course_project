@@ -58,6 +58,19 @@ class UserServiceImplTest {
         assertFalse("plain123".equals(captor.getValue().getPasswordHash()));
     }
 
+    // 1b. Регистрация библиотекаря: роль LIBRARIAN, пароль захеширован
+    @Test
+    void registerLibrarian_SetsLibrarianRole() {
+        when(userRepository.findByEmail("lib@mail.ru")).thenReturn(Optional.empty());
+        when(passwordEncoder.encode("plain123")).thenReturn("ENCODED");
+        when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        User created = userService.registerLibrarian("lib@mail.ru", "plain123", "Библиотекарь");
+
+        assertEquals("LIBRARIAN", created.getRole());
+        assertEquals("ENCODED", created.getPasswordHash());
+    }
+
     // 2. Регистрация с уже занятым email
     @Test
     void registerUser_ThrowsException_WhenEmailExists() {

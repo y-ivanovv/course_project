@@ -28,11 +28,22 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public User registerUser(String email, String password, String name) {
+        return createUser(email, password, name, "USER");
+    }
+
+    @Override
+    @Transactional
+    public User registerLibrarian(String email, String password, String name) {
+        return createUser(email, password, name, "LIBRARIAN");
+    }
+
+    private User createUser(String email, String password, String name, String role) {
         if (userRepository.findByEmail(email).isPresent()) {
             throw new DuplicateResourceException("Пользователь с таким email уже существует!");
         }
         // Пароль хранится только в виде BCrypt-хеша
         User user = new User(email, passwordEncoder.encode(password), name);
+        user.setRole(role);
         return userRepository.save(user);
     }
 

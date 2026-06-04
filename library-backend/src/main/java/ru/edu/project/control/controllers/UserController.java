@@ -17,6 +17,7 @@ import ru.edu.project.control.dto.UserRegisterRequest;
 import ru.edu.project.control.dto.UserResponse;
 import ru.edu.project.entity.User;
 import ru.edu.project.foundation.security.AuthInterceptor;
+import ru.edu.project.foundation.security.RequireRole;
 import ru.edu.project.mediator.interfaces.UserService;
 
 @RestController
@@ -34,6 +35,14 @@ public class UserController {
     @PostMapping("/register")
     public ResponseEntity<UserResponse> register(@Valid @RequestBody UserRegisterRequest request) {
         User user = userService.registerUser(request.getEmail(), request.getPassword(), request.getName());
+        return ResponseEntity.ok(UserResponse.from(user));
+    }
+
+    // Создание учётной записи библиотекаря. Доступно только действующему библиотекарю.
+    @PostMapping("/librarians")
+    @RequireRole("LIBRARIAN")
+    public ResponseEntity<UserResponse> createLibrarian(@Valid @RequestBody UserRegisterRequest request) {
+        User user = userService.registerLibrarian(request.getEmail(), request.getPassword(), request.getName());
         return ResponseEntity.ok(UserResponse.from(user));
     }
 
