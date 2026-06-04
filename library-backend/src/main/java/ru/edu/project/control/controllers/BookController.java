@@ -12,12 +12,16 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import ru.edu.project.control.dto.BookCreateRequest;
 import ru.edu.project.control.dto.BookSearchRequest;
 import ru.edu.project.entity.Book;
+import ru.edu.project.entity.Loan;
+import ru.edu.project.foundation.security.AuthInterceptor;
 import ru.edu.project.foundation.security.RequireRole;
 import ru.edu.project.mediator.interfaces.BookService;
+import ru.edu.project.mediator.interfaces.LoanService;
 
 /**
  * Авторизация (наличие сессии + роли) обеспечивается AuthInterceptor,
@@ -30,10 +34,12 @@ public class BookController {
     private static final String ROLE_LIBRARIAN = "LIBRARIAN";
 
     private final BookService bookService;
+    private final LoanService loanService;
 
     @Autowired
-    public BookController(BookService bookService) {
+    public BookController(BookService bookService, LoanService loanService) {
         this.bookService = bookService;
+        this.loanService = loanService;
     }
 
     // Получить все книги
@@ -76,15 +82,19 @@ public class BookController {
         return ResponseEntity.noContent().build();
     }
 
-    // Выдать книгу
+    // Выдать книгу текущему пользователю
     @PostMapping("/{id}/borrow")
-    public Book borrowBook(@PathVariable String id) {
-        return bookService.borrowBook(id);
+    public Loan borrowBook(@PathVariable String id, HttpSession session) {
+        return loanService.borrowBook(id, currentUserId(session));
     }
 
-    // Вернуть книгу
+    // Вернуть книгу (только тот, кто её взял)
     @PostMapping("/{id}/return")
-    public Book returnBook(@PathVariable String id) {
-        return bookService.returnBook(id);
+    public Loan returnBook(@PathVariable String id, HttpSession session) {
+        return loanService.returnBook(id, currentUserId(session));
+    }
+
+    private Long currentUserId(HttpSession session) {
+        return (Long) session.getAttribute(AuthInterceptor.SESSION_USER);
     }
 }

@@ -13,10 +13,6 @@ public interface BookService {
     Optional<Book> getBookById(String id);
     
     List<Book> searchBooks(String query);
-    
+
     void deleteBook(String id);
-    
-    Book borrowBook(String id);
-    
-    Book returnBook(String id);
 }

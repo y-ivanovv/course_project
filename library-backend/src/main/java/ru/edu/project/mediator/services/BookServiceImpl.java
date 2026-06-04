@@ -59,20 +59,4 @@ public class BookServiceImpl implements BookService {
         }
         bookRepository.deleteById(id);
     }
-
-    @Override
-    public Book borrowBook(String id) {
-        Book book = bookRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Книга не найдена"));
-        book.borrowBook();
-        return bookRepository.save(book);
-    }
-
-    @Override
-    public Book returnBook(String id) {
-        Book book = bookRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Книга не найдена"));
-        book.returnBook();
-        return bookRepository.save(book);
-    }
 }

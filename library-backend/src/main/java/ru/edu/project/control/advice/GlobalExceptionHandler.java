@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import ru.edu.project.control.dto.ErrorResponse;
 import ru.edu.project.mediator.exceptions.DuplicateResourceException;
+import ru.edu.project.mediator.exceptions.ForbiddenOperationException;
 import ru.edu.project.mediator.exceptions.ResourceNotFoundException;
 
 /**
@@ -29,6 +30,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(DuplicateResourceException.class)
     public ResponseEntity<ErrorResponse> handleDuplicate(DuplicateResourceException ex) {
         return build(HttpStatus.CONFLICT, ex.getMessage());
+    }
+
+    @ExceptionHandler(ForbiddenOperationException.class)
+    public ResponseEntity<ErrorResponse> handleForbidden(ForbiddenOperationException ex) {
+        return build(HttpStatus.FORBIDDEN, ex.getMessage());
     }
 
     @ExceptionHandler(IllegalStateException.class)
