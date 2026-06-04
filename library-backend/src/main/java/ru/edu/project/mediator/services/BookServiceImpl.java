@@ -1,10 +1,10 @@
 package ru.edu.project.mediator.services;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import ru.edu.project.entity.Book;
@@ -33,10 +33,8 @@ public class BookServiceImpl implements BookService {
     }
 
     @Override
-    public List<Book> getAllBooks() {
-        List<Book> books = new ArrayList<>();
-        bookRepository.findAll().forEach(books::add);
-        return books;
+    public Page<Book> getBooks(Pageable pageable) {
+        return bookRepository.findAll(pageable);
     }
 
     @Override
@@ -45,11 +43,11 @@ public class BookServiceImpl implements BookService {
     }
 
     @Override
-    public List<Book> searchBooks(String query) {
+    public Page<Book> searchBooks(String query, Pageable pageable) {
         if (query == null || query.isBlank()) {
-            return new ArrayList<>();
+            return Page.empty(pageable);
         }
-        return bookRepository.searchByQuery(query);
+        return bookRepository.searchByQuery(query, pageable);
     }
 
     @Override
@@ -58,5 +56,12 @@ public class BookServiceImpl implements BookService {
             throw new ResourceNotFoundException("Книга не найдена");
         }
         bookRepository.deleteById(id);
+    }
+
+    @Override
+    public void deleteByIsbn(String isbn) {
+        Book book = bookRepository.findByIsbn(isbn)
+                .orElseThrow(() -> new ResourceNotFoundException("Книга с ISBN " + isbn + " не найдена"));
+        bookRepository.deleteById(book.getId());
     }
 }

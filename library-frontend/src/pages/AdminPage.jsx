@@ -1,15 +1,25 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { libraryApi } from '../api/libraryApi';
-import { useBooks } from '../hooks/useBooks.js';
 import { ui, button, colors } from '../styles/ui.js';
 
-const AdminPage = () => {
-  const { books, reload } = useBooks();
-  const { register, handleSubmit, reset, formState: { errors } } = useForm();
-  const [message, setMessage] = useState(null);
+const cardStyle = { flex: 1, minWidth: 320, padding: 20, border: '1px solid #ccc', borderRadius: 8 };
 
-  // Отдельная форма и сообщение для создания библиотекаря
+const AdminPage = () => {
+  // Форма добавления книги
+  const { register, handleSubmit, reset, formState: { errors } } = useForm();
+  const [bookMessage, setBookMessage] = useState(null);
+
+  // Форма удаления книги по ISBN
+  const {
+    register: registerDel,
+    handleSubmit: handleSubmitDel,
+    reset: resetDel,
+    formState: { errors: errorsDel },
+  } = useForm();
+  const [delMessage, setDelMessage] = useState(null);
+
+  // Форма создания библиотекаря
   const {
     register: registerLib,
     handleSubmit: handleSubmitLib,
@@ -21,23 +31,23 @@ const AdminPage = () => {
   const onAddBook = async (data) => {
     try {
       await libraryApi.createBook(data);
-      setMessage({ type: 'success', text: 'Книга добавлена и готова к поиску!' });
+      setBookMessage({ type: 'success', text: 'Книга добавлена и готова к поиску!' });
       reset();
-      reload();
     } catch (err) {
-      setMessage({ type: 'error', text: err.response?.data?.message || 'Ошибка добавления книги' });
+      setBookMessage({ type: 'error', text: err.response?.data?.message || 'Ошибка добавления книги' });
     }
   };
 
-  const onDeleteBook = async (id) => {
-    if (!window.confirm('Вы действительно хотите удалить эту книгу из базы?')) {
+  const onDeleteByIsbn = async (data) => {
+    if (!window.confirm(`Удалить книгу с ISBN ${data.isbn}?`)) {
       return;
     }
     try {
-      await libraryApi.deleteBook(id);
-      reload();
-    } catch {
-      setMessage({ type: 'error', text: 'Ошибка при удалении' });
+      await libraryApi.deleteBookByIsbn(data.isbn);
+      setDelMessage({ type: 'success', text: `Книга с ISBN ${data.isbn} удалена` });
+      resetDel();
+    } catch (err) {
+      setDelMessage({ type: 'error', text: err.response?.data?.message || 'Ошибка удаления книги' });
     }
   };
 
@@ -52,13 +62,14 @@ const AdminPage = () => {
   };
 
   return (
-    <div style={{ maxWidth: 900, margin: '30px auto', ...ui.page }}>
-      <div style={{ display: 'flex', gap: 30 }}>
-        {/* Форма добавления книги */}
-        <div style={{ flex: 1, padding: 20, border: '1px solid #ccc', borderRadius: 8 }}>
-          <h3>Добавить книгу (Библиотекарь)</h3>
-          {message && (
-            <div style={message.type === 'success' ? ui.success : ui.error}>{message.text}</div>
+    <div style={{ maxWidth: 1000, margin: '30px auto', ...ui.page }}>
+      <h2>Панель библиотекаря</h2>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 24 }}>
+        {/* Добавление книги */}
+        <div style={cardStyle}>
+          <h3>Добавить книгу</h3>
+          {bookMessage && (
+            <div style={bookMessage.type === 'success' ? ui.success : ui.error}>{bookMessage.text}</div>
           )}
           <form onSubmit={handleSubmit(onAddBook)} style={ui.form}>
             <div>
@@ -88,60 +99,51 @@ const AdminPage = () => {
           </form>
         </div>
 
-        {/* Список для удаления */}
-        <div style={{ flex: 1.5 }}>
-          <h3>Управление фондом</h3>
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead>
-              <tr style={{ borderBottom: '2px solid #ccc', textAlign: 'left' }}>
-                <th>Название</th>
-                <th>ISBN</th>
-                <th>Действие</th>
-              </tr>
-            </thead>
-            <tbody>
-              {books.map((book) => (
-                <tr key={book.id} style={{ borderBottom: '1px solid #eee' }}>
-                  <td style={{ padding: '8px 0' }}>{book.title}</td>
-                  <td>{book.isbn}</td>
-                  <td>
-                    <button onClick={() => onDeleteBook(book.id)} style={button(colors.danger)}>Удалить</button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        {/* Удаление книги по ISBN */}
+        <div style={cardStyle}>
+          <h3>Удалить книгу по ISBN</h3>
+          {delMessage && (
+            <div style={delMessage.type === 'success' ? ui.success : ui.error}>{delMessage.text}</div>
+          )}
+          <form onSubmit={handleSubmitDel(onDeleteByIsbn)} style={ui.form}>
+            <div>
+              <label style={ui.label}>ISBN *</label>
+              <input type="text" {...registerDel('isbn', { required: 'Введите ISBN' })} style={ui.input} />
+              {errorsDel.isbn && <span style={ui.errorText}>{errorsDel.isbn.message}</span>}
+            </div>
+            <button type="submit" style={button(colors.danger)}>Удалить книгу</button>
+          </form>
         </div>
-      </div>
 
-      {/* Создание учётной записи библиотекаря */}
-      <div style={{ marginTop: 30, maxWidth: 420, padding: 20, border: '1px solid #ccc', borderRadius: 8 }}>
-        <h3>Добавить библиотекаря</h3>
-        {libMessage && (
-          <div style={libMessage.type === 'success' ? ui.success : ui.error}>{libMessage.text}</div>
-        )}
-        <form onSubmit={handleSubmitLib(onCreateLibrarian)} style={ui.form}>
-          <div>
-            <label style={ui.label}>Имя *</label>
-            <input type="text" {...registerLib('name', { required: 'Введите имя' })} style={ui.input} />
-            {errorsLib.name && <span style={ui.errorText}>{errorsLib.name.message}</span>}
-          </div>
-          <div>
-            <label style={ui.label}>Email *</label>
-            <input type="email" {...registerLib('email', { required: 'Введите email' })} style={ui.input} />
-            {errorsLib.email && <span style={ui.errorText}>{errorsLib.email.message}</span>}
-          </div>
-          <div>
-            <label style={ui.label}>Пароль *</label>
-            <input
-              type="password"
-              {...registerLib('password', { required: 'Введите пароль', minLength: 6 })}
-              style={ui.input}
-            />
-            {errorsLib.password && <span style={ui.errorText}>Минимум 6 символов</span>}
-          </div>
-          <button type="submit" style={button()}>Создать библиотекаря</button>
-        </form>
+        {/* Создание библиотекаря */}
+        <div style={cardStyle}>
+          <h3>Добавить библиотекаря</h3>
+          {libMessage && (
+            <div style={libMessage.type === 'success' ? ui.success : ui.error}>{libMessage.text}</div>
+          )}
+          <form onSubmit={handleSubmitLib(onCreateLibrarian)} style={ui.form}>
+            <div>
+              <label style={ui.label}>Имя *</label>
+              <input type="text" {...registerLib('name', { required: 'Введите имя' })} style={ui.input} />
+              {errorsLib.name && <span style={ui.errorText}>{errorsLib.name.message}</span>}
+            </div>
+            <div>
+              <label style={ui.label}>Email *</label>
+              <input type="email" {...registerLib('email', { required: 'Введите email' })} style={ui.input} />
+              {errorsLib.email && <span style={ui.errorText}>{errorsLib.email.message}</span>}
+            </div>
+            <div>
+              <label style={ui.label}>Пароль *</label>
+              <input
+                type="password"
+                {...registerLib('password', { required: 'Введите пароль', minLength: 6 })}
+                style={ui.input}
+              />
+              {errorsLib.password && <span style={ui.errorText}>Минимум 6 символов</span>}
+            </div>
+            <button type="submit" style={button()}>Создать библиотекаря</button>
+          </form>
+        </div>
       </div>
     </div>
   );

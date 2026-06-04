@@ -75,4 +75,26 @@ class BookServiceImplTest {
         assertEquals("Книга не найдена", exception.getMessage());
         verify(bookRepository, never()).deleteById(anyString());
     }
+
+    // 4. Успешное удаление по ISBN
+    @Test
+    void deleteByIsbn_Success() {
+        when(bookRepository.findByIsbn("12345")).thenReturn(Optional.of(testBook));
+
+        bookService.deleteByIsbn("12345");
+
+        verify(bookRepository, times(1)).deleteById("test-id-123");
+    }
+
+    // 5. Удаление по несуществующему ISBN
+    @Test
+    void deleteByIsbn_ThrowsException_WhenNotFound() {
+        when(bookRepository.findByIsbn("00000")).thenReturn(Optional.empty());
+
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+                () -> bookService.deleteByIsbn("00000"));
+
+        assertEquals("Книга с ISBN 00000 не найдена", exception.getMessage());
+        verify(bookRepository, never()).deleteById(anyString());
+    }
 }

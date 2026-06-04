@@ -2,11 +2,11 @@ import api from './axios';
 
 export const libraryApi = {
   // Книги (Elasticsearch)
-  getAllBooks: () => api.get('/books'),
+  getAllBooks: (offset = 0, limit = 12) => api.get('/books', { params: { offset, limit } }),
   getBookById: (id) => api.get(`/books/${id}`),
-  searchBooks: (query) => api.post('/books/search', { query }),
+  searchBooks: (query, offset = 0, limit = 12) => api.post('/books/search', { query }, { params: { offset, limit } }),
   createBook: (bookData) => api.post('/books', bookData),
-  deleteBook: (id) => api.delete(`/books/${id}`),
+  deleteBookByIsbn: (isbn) => api.delete(`/books/by-isbn/${isbn}`),
   borrowBook: (id) => api.post(`/books/${id}/borrow`),
   returnBook: (id) => api.post(`/books/${id}/return`),
 
