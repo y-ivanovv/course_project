@@ -5,7 +5,7 @@ import { colors } from '../styles/ui.js';
 const linkStyle = { color: 'white', textDecoration: 'none' };
 
 export default function NavBar() {
-  const { isAuthenticated, isLibrarian, user, logout } = useAuth();
+  const { isAuthenticated, user, logout } = useAuth();
   const navigate = useNavigate();
 
   const handleLogout = async () => {
@@ -27,7 +27,6 @@ export default function NavBar() {
         </>
       ) : (
         <>
-          {isLibrarian && <Link to="/admin" style={linkStyle}>Управление (Админ)</Link>}
           <span style={{ color: '#bdc3c7', marginLeft: 'auto' }}>
             Привет, {user.name} ({user.role})
           </span>

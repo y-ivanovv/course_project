@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { libraryApi } from '../api/libraryApi';
+import { useAuth } from '../context/authContext.js';
 import { useBooks } from '../hooks/useBooks.js';
 import { ui, button, statusBadge, colors } from '../styles/ui.js';
 
 const BookSearchPage = () => {
   const { books, setBooks, reload } = useBooks();
+  const { isLibrarian } = useAuth();
   const [query, setQuery] = useState('');
   const navigate = useNavigate();
 
@@ -27,7 +29,9 @@ const BookSearchPage = () => {
     <div style={{ maxWidth: 800, margin: '30px auto', ...ui.page }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <h2>Полнотекстовый поиск книг (Elasticsearch)</h2>
-        <button onClick={() => navigate('/admin')} style={button(colors.dark)}>Панель библиотекаря ↗</button>
+        {isLibrarian && (
+          <button onClick={() => navigate('/admin')} style={button(colors.dark)}>Панель библиотекаря ↗</button>
+        )}
       </div>
 
       <form onSubmit={handleSearch} style={{ display: 'flex', gap: 10, margin: '20px 0' }}>

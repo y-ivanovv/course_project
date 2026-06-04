@@ -12,6 +12,7 @@ export const libraryApi = {
 
   // Пользователи (PostgreSQL)
   createUser: (userData) => api.post('/users/register', userData),
+  createLibrarian: (userData) => api.post('/users/librarians', userData),
   loginUser: (credentials) => api.post('/users/login', credentials),
   logoutUser: () => api.post('/users/logout'),
 };
