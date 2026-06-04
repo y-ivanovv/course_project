@@ -16,7 +16,7 @@ public class Book {
     @Field(type = FieldType.Text, analyzer = "russian_analyzer", searchAnalyzer = "russian_analyzer")
     private String title;
 
-    @Field(type = FieldType.Text, analyzer = "keyword")
+    @Field(type = FieldType.Text, analyzer = "russian_analyzer", searchAnalyzer = "russian_analyzer")
     private String author;
 
     @Field(type = FieldType.Keyword)
@@ -25,7 +25,7 @@ public class Book {
     @Field(type = FieldType.Text, analyzer = "russian_analyzer", searchAnalyzer = "russian_analyzer")
     private String description; // Теперь полнотекстовый поиск по-русски будет работать и тут
 
-    @Field(type = FieldType.Keyword)
+    @Field(type = FieldType.Text, analyzer = "russian_analyzer", searchAnalyzer = "russian_analyzer")
     private String genre;
 
     @Field(type = FieldType.Keyword)

@@ -16,9 +16,14 @@ public interface BookRepository extends ElasticsearchRepository<Book, String> {
     Optional<Book> findByIsbn(String isbn);
 
     /**
-     * Честный полнотекстовый поиск (multi_match) по двум полям с использованием анализатора.
+     * Полнотекстовый поиск по всем полям книги.
+     * - title, description, author, genre — нечёткий полнотекстовый поиск (multi_match, fuzziness AUTO);
+     * - isbn — точное совпадение (term), без нечёткости, чтобы не цеплять соседние номера.
      * Пагинация (from/size) применяется через переданный Pageable.
      */
-    @Query("{\"multi_match\": {\"query\": \"?0\", \"fields\": [\"title\", \"description\"], \"fuzziness\": \"AUTO\"}}")
+    @Query("{\"bool\": {\"should\": ["
+            + "{\"multi_match\": {\"query\": \"?0\", \"fields\": [\"title\", \"description\", \"author\", \"genre\"], \"fuzziness\": \"AUTO\"}},"
+            + "{\"term\": {\"isbn\": \"?0\"}}"
+            + "], \"minimum_should_match\": 1}}")
     Page<Book> searchByQuery(String query, Pageable pageable);
 }
