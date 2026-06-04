@@ -1,79 +1,74 @@
-import React, { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { libraryApi } from '../api/libraryApi';
+import { useBooks } from '../hooks/useBooks.js';
+import { ui, button, colors } from '../styles/ui.js';
 
 const AdminPage = () => {
-  const [books, setBooks] = useState([]);
+  const { books, reload } = useBooks();
   const { register, handleSubmit, reset, formState: { errors } } = useForm();
-
-  useEffect(() => {
-    loadBooks();
-  }, []);
-
-  const loadBooks = async () => {
-    try {
-      const response = await libraryApi.getAllBooks();
-      setBooks(response.data);
-    } catch (err) {
-      console.error(err);
-    }
-  };
+  const [message, setMessage] = useState(null);
 
   const onAddBook = async (data) => {
     try {
       await libraryApi.createBook(data);
-      alert('Книга добавлена в Elasticsearch и готова к поиску!');
+      setMessage({ type: 'success', text: 'Книга добавлена и готова к поиску!' });
       reset();
-      loadBooks();
+      reload();
     } catch (err) {
-      alert(err.response?.data?.message || 'Ошибка добавления книги');
+      setMessage({ type: 'error', text: err.response?.data?.message || 'Ошибка добавления книги' });
     }
   };
 
   const onDeleteBook = async (id) => {
-    if (window.confirm('Вы действительно хотите удалить эту книгу из базы?')) {
-      try {
-        await libraryApi.deleteBook(id);
-        loadBooks();
-      } catch (err) {
-        alert('Ошибка при удалении');
-      }
+    if (!window.confirm('Вы действительно хотите удалить эту книгу из базы?')) {
+      return;
+    }
+    try {
+      await libraryApi.deleteBook(id);
+      reload();
+    } catch {
+      setMessage({ type: 'error', text: 'Ошибка при удалении' });
     }
   };
 
   return (
-    <div style={{ maxWidth: '900px', margin: '30px auto', fontFamily: 'Arial', display: 'flex', gap: '30px' }}>
-      
-      {/* Левая часть: Форма добавления */}
-      <div style={{ flex: 1, padding: '20px', border: '1px solid #ccc', borderRadius: '8px' }}>
+    <div style={{ maxWidth: 900, margin: '30px auto', display: 'flex', gap: 30, ...ui.page }}>
+      {/* Форма добавления */}
+      <div style={{ flex: 1, padding: 20, border: '1px solid #ccc', borderRadius: 8 }}>
         <h3>Добавить книгу (Библиотекарь)</h3>
-        <form onSubmit={handleSubmit(onAddBook)} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+        {message && (
+          <div style={message.type === 'success' ? ui.success : ui.error}>{message.text}</div>
+        )}
+        <form onSubmit={handleSubmit(onAddBook)} style={ui.form}>
           <div>
-            <label>Название *</label>
-            <input type="text" {...register('title', { required: 'Введите название' })} style={{ width: '100%', padding: '6px' }} />
-            {errors.title && <span style={{ color: 'red', fontSize: '12px' }}>{errors.title.message}</span>}
+            <label style={ui.label}>Название *</label>
+            <input type="text" {...register('title', { required: 'Введите название' })} style={ui.input} />
+            {errors.title && <span style={ui.errorText}>{errors.title.message}</span>}
           </div>
           <div>
-            <label>Автор *</label>
-            <input type="text" {...register('author', { required: 'Укажите автора' })} style={{ width: '100%', padding: '6px' }} />
+            <label style={ui.label}>Автор *</label>
+            <input type="text" {...register('author', { required: 'Укажите автора' })} style={ui.input} />
+            {errors.author && <span style={ui.errorText}>{errors.author.message}</span>}
           </div>
           <div>
-            <label>ISBN *</label>
-            <input type="text" {...register('isbn', { required: 'ISBN обязателен' })} style={{ width: '100%', padding: '6px' }} />
+            <label style={ui.label}>ISBN *</label>
+            <input type="text" {...register('isbn', { required: 'ISBN обязателен' })} style={ui.input} />
+            {errors.isbn && <span style={ui.errorText}>{errors.isbn.message}</span>}
           </div>
           <div>
-            <label>Жанр</label>
-            <input type="text" {...register('genre')} style={{ width: '100%', padding: '6px' }} />
+            <label style={ui.label}>Жанр</label>
+            <input type="text" {...register('genre')} style={ui.input} />
           </div>
           <div>
-            <label>Описание</label>
-            <textarea {...register('description')} rows="3" style={{ width: '100%', padding: '6px' }} />
+            <label style={ui.label}>Описание</label>
+            <textarea {...register('description')} rows="3" style={ui.input} />
           </div>
-          <button type="submit" style={{ padding: '10px', backgroundColor: '#2ecc71', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Сохранить книгу</button>
+          <button type="submit" style={button(colors.success)}>Сохранить книгу</button>
         </form>
       </div>
 
-      {/* Правая часть: Список для удаления */}
+      {/* Список для удаления */}
       <div style={{ flex: 1.5 }}>
         <h3>Управление фондом</h3>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -85,12 +80,12 @@ const AdminPage = () => {
             </tr>
           </thead>
           <tbody>
-            {books.map(book => (
+            {books.map((book) => (
               <tr key={book.id} style={{ borderBottom: '1px solid #eee' }}>
                 <td style={{ padding: '8px 0' }}>{book.title}</td>
                 <td>{book.isbn}</td>
                 <td>
-                  <button onClick={() => onDeleteBook(book.id)} style={{ padding: '4px 8px', backgroundColor: '#e74c3c', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Удалить</button>
+                  <button onClick={() => onDeleteBook(book.id)} style={button(colors.danger)}>Удалить</button>
                 </td>
               </tr>
             ))}

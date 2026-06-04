@@ -1,67 +1,59 @@
-import React, { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { libraryApi } from '../api/libraryApi';
+import { useBooks } from '../hooks/useBooks.js';
+import { ui, button, statusBadge, colors } from '../styles/ui.js';
 
 const BookSearchPage = () => {
-  const [books, setBooks] = useState([]);
+  const { books, setBooks, reload } = useBooks();
   const [query, setQuery] = useState('');
   const navigate = useNavigate();
-
-  useEffect(() => {
-    loadAllBooks();
-  }, []);
-
-  const loadAllBooks = async () => {
-    try {
-      const response = await libraryApi.getAllBooks();
-      setBooks(response.data);
-    } catch (err) {
-      console.error('Ошибка загрузки книг', err);
-    }
-  };
 
   const handleSearch = async (e) => {
     e.preventDefault();
     if (!query.trim()) {
-      loadAllBooks();
+      reload();
       return;
     }
     try {
       const response = await libraryApi.searchBooks(query);
       setBooks(response.data);
-    } catch (err) {
-      console.error('Ошибка поиска', err);
+    } catch {
+      // ошибку поиска показывать не критично — оставляем текущий список
     }
   };
 
   return (
-    <div style={{ maxWidth: '800px', margin: '30px auto', fontFamily: 'Arial' }}>
+    <div style={{ maxWidth: 800, margin: '30px auto', ...ui.page }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <h2>Полнотекстовый поиск книг (Elasticsearch)</h2>
-        <button onClick={() => navigate('/admin')} style={{ padding: '8px', backgroundColor: '#2c3e50', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Панель библиотекаря ↗</button>
+        <button onClick={() => navigate('/admin')} style={button(colors.dark)}>Панель библиотекаря ↗</button>
       </div>
 
-      <form onSubmit={handleSearch} style={{ display: 'flex', gap: '10px', margin: '20px 0' }}>
-        <input 
-          type="text" 
-          placeholder="Введите название или описание книги (например: руководству)..." 
+      <form onSubmit={handleSearch} style={{ display: 'flex', gap: 10, margin: '20px 0' }}>
+        <input
+          type="text"
+          placeholder="Введите название или описание книги (например: руководству)..."
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          style={{ flex: 1, padding: '10px', borderRadius: '4px', border: '1px solid #ccc' }}
+          style={{ ...ui.input, flex: 1 }}
         />
-        <button type="submit" style={{ padding: '10px 20px', backgroundColor: '#3498db', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Искать</button>
+        <button type="submit" style={button()}>Искать</button>
       </form>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
-        {books.map(book => (
-          <div key={book.id} style={{ padding: '15px', border: '1px solid #eee', borderRadius: '6px', backgroundColor: '#fff', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 15 }}>
+        {books.map((book) => (
+          <div key={book.id} style={ui.card}>
             <h3>{book.title}</h3>
             <p><strong>Автор:</strong> {book.author}</p>
-            <p style={{ color: '#666', fontSize: '14px' }}>{book.description?.substring(0, 80)}...</p>
-            <span style={{ padding: '4px 8px', borderRadius: '4px', fontSize: '12px', color: 'white', backgroundColor: book.status === 'AVAILABLE' ? '#27ae60' : '#e67e22' }}>
-              {book.status}
-            </span>
-            <button onClick={() => navigate(`/books/${book.id}`)} style={{ display: 'block', marginTop: '10px', padding: '6px 12px', backgroundColor: '#f1f1f1', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Подробнее</button>
+            <p style={{ color: colors.muted, fontSize: 14 }}>{book.description?.substring(0, 80)}...</p>
+            <span style={statusBadge(book.status)}>{book.status}</span>
+            <button
+              onClick={() => navigate(`/books/${book.id}`)}
+              style={{ ...button('#f1f1f1'), color: '#000', display: 'block', marginTop: 10 }}
+            >
+              Подробнее
+            </button>
           </div>
         ))}
       </div>
