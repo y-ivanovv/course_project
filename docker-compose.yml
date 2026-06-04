@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: library_postgres
+    environment:
+      POSTGRES_DB: library_db
+      POSTGRES_USER: lib_user
+      POSTGRES_PASSWORD: LibPassword123!
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - library_network
+
+  elasticsearch:
+    image: elasticsearch:8.11.1
+    container_name: library_elastic
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false # Отключаем встроенную безопасность для локальной разработки, чтобы не мучиться с SSL-сертификатами
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m" # Ограничиваем аппетит Эластика по памяти, чтобы комп не лагал
+    ports:
+      - "9200:9200"
+    volumes:
+      - esdata:/usr/share/elasticsearch/data
+    networks:
+      - library_network
+
+volumes:
+  pgdata:
+  esdata:
+
+networks:
+  library_network:
+    driver: bridge
