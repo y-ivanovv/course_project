@@ -3,32 +3,43 @@ package ru.edu.project.mediator.services;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import ru.edu.project.entity.User;
 import ru.edu.project.foundation.repositories.UserRepository;
+import ru.edu.project.mediator.exceptions.DuplicateResourceException;
+import ru.edu.project.mediator.exceptions.ResourceNotFoundException;
 import ru.edu.project.mediator.interfaces.UserService;
 
 @Service
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
     @Autowired
-    public UserServiceImpl(UserRepository userRepository) {
+    public UserServiceImpl(UserRepository userRepository, PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @Override
     @Transactional
     public User registerUser(String email, String password, String name) {
         if (userRepository.findByEmail(email).isPresent()) {
-            throw new IllegalArgumentException("Пользователь с таким email уже существует!");
+            throw new DuplicateResourceException("Пользователь с таким email уже существует!");
         }
-        // В реальном проекте тут будет BCrypt, сейчас для простоты пишем хэш напрямую
-        User user = new User(email, password, name);
+        // Пароль хранится только в виде BCrypt-хеша
+        User user = new User(email, passwordEncoder.encode(password), name);
         return userRepository.save(user);
+    }
+
+    @Override
+    public Optional<User> authenticate(String email, String rawPassword) {
+        return userRepository.findByEmail(email)
+                .filter(user -> passwordEncoder.matches(rawPassword, user.getPasswordHash()));
     }
 
     @Override
@@ -45,7 +56,7 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public User updateUserName(Long id, String newName) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Пользователь не найден"));
+                .orElseThrow(() -> new ResourceNotFoundException("Пользователь не найден"));
         
         // Вызов бизнес-метода из слоя Entity
         user.changeName(newName); 

@@ -9,6 +9,8 @@ import org.springframework.stereotype.Service;
 
 import ru.edu.project.entity.Book;
 import ru.edu.project.foundation.repositories.BookRepository;
+import ru.edu.project.mediator.exceptions.DuplicateResourceException;
+import ru.edu.project.mediator.exceptions.ResourceNotFoundException;
 import ru.edu.project.mediator.interfaces.BookService;
 
 @Service
@@ -24,7 +26,7 @@ public class BookServiceImpl implements BookService {
     @Override
     public Book addBook(String title, String author, String isbn, String description, String genre) {
         if (bookRepository.findByIsbn(isbn).isPresent()) {
-            throw new IllegalArgumentException("Книга с таким ISBN уже существует!");
+            throw new DuplicateResourceException("Книга с таким ISBN уже существует!");
         }
         Book book = new Book(title, author, isbn, description, genre);
         return bookRepository.save(book);
@@ -53,7 +55,7 @@ public class BookServiceImpl implements BookService {
     @Override
     public void deleteBook(String id) {
         if (!bookRepository.existsById(id)) {
-            throw new IllegalArgumentException("Книга не найдена");
+            throw new ResourceNotFoundException("Книга не найдена");
         }
         bookRepository.deleteById(id);
     }
@@ -61,16 +63,16 @@ public class BookServiceImpl implements BookService {
     @Override
     public Book borrowBook(String id) {
         Book book = bookRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Книга не найдена"));
-        book.borrowBook(); 
+                .orElseThrow(() -> new ResourceNotFoundException("Книга не найдена"));
+        book.borrowBook();
         return bookRepository.save(book);
     }
 
     @Override
     public Book returnBook(String id) {
         Book book = bookRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Книга не найдена"));
-        book.returnBook(); 
+                .orElseThrow(() -> new ResourceNotFoundException("Книга не найдена"));
+        book.returnBook();
         return bookRepository.save(book);
     }
 }

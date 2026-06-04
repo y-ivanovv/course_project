@@ -45,14 +45,6 @@ public class User {
     }
 
     /**
-     * Бизнес-метод слоя Entity: Проверка пароля.
-     * Логика состояния хранится внутри самой сущности, как требует методология PCMEF.
-     */
-    public boolean checkPassword(String rawPassword) {
-        return this.passwordHash.equals(rawPassword);
-    }
-
-    /**
      * Бизнес-метод слоя Entity: Смена имени пользователя.
      */
     public void changeName(String newName) {

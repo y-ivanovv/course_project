@@ -1,9 +1,9 @@
 package ru.edu.project.control.controllers;
 
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -12,17 +12,22 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import ru.edu.project.control.dto.BookCreateRequest;
 import ru.edu.project.control.dto.BookSearchRequest;
 import ru.edu.project.entity.Book;
+import ru.edu.project.foundation.security.RequireRole;
 import ru.edu.project.mediator.interfaces.BookService;
 
-@CrossOrigin(origins = "http://localhost:5173", allowedHeaders = "*", allowCredentials = "true")
+/**
+ * Авторизация (наличие сессии + роли) обеспечивается AuthInterceptor,
+ * обработка ошибок — GlobalExceptionHandler. Контроллер содержит только маршрутизацию.
+ */
 @RestController
 @RequestMapping("/api/books")
 public class BookController {
+
+    private static final String ROLE_LIBRARIAN = "LIBRARIAN";
 
     private final BookService bookService;
 
@@ -31,102 +36,55 @@ public class BookController {
         this.bookService = bookService;
     }
 
-    // 1. Получить все книги (Для всех авторизованных)
+    // Получить все книги
     @GetMapping
-    public ResponseEntity<?> getAll(HttpSession session) {
-        if (session.getAttribute("currentUser") == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Авторизуйтесь в системе");
-        }
-        return ResponseEntity.ok(bookService.getAllBooks());
+    public List<Book> getAll() {
+        return bookService.getAllBooks();
     }
 
-    // 2. Получить книгу по ID (Для всех авторизованных)
+    // Получить книгу по ID
     @GetMapping("/{id}")
-    public ResponseEntity<?> getById(@PathVariable String id, HttpSession session) {
-        if (session.getAttribute("currentUser") == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
+    public ResponseEntity<Book> getById(@PathVariable String id) {
         return bookService.getBookById(id)
                 .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    // 3. ПОИСК ЧЕРЕЗ POST (Для всех авторизованных)
+    // Полнотекстовый поиск
     @PostMapping("/search")
-    public ResponseEntity<?> search(@Valid @RequestBody BookSearchRequest request, HttpSession session) {
-        if (session.getAttribute("currentUser") == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
-        return ResponseEntity.ok(bookService.searchBooks(request.getQuery()));
+    public List<Book> search(@Valid @RequestBody BookSearchRequest request) {
+        return bookService.searchBooks(request.getQuery());
     }
 
-    // 4. Создание книги (ТОЛЬКО ДЛЯ LIBRARIAN)
+    // Создание книги (только LIBRARIAN)
     @PostMapping
-    public ResponseEntity<?> create(@Valid @RequestBody BookCreateRequest request, HttpSession session) {
-        if (session.getAttribute("currentUser") == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
-        
-        String role = (String) session.getAttribute("userRole");
-        if (!"LIBRARIAN".equals(role)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Доступ только для библиотекарей");
-        }
-
-        Book book = bookService.addBook(
-                request.getTitle(), 
-                request.getAuthor(), 
-                request.getIsbn(), 
-                request.getDescription(), 
-                request.getGenre()
-        );
-        return ResponseEntity.ok(book);
+    @RequireRole(ROLE_LIBRARIAN)
+    public Book create(@Valid @RequestBody BookCreateRequest request) {
+        return bookService.addBook(
+                request.getTitle(),
+                request.getAuthor(),
+                request.getIsbn(),
+                request.getDescription(),
+                request.getGenre());
     }
 
-    // 5. Удаление книги (ТОЛЬКО ДЛЯ LIBRARIAN)
+    // Удаление книги (только LIBRARIAN)
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> delete(@PathVariable String id, HttpSession session) {
-        if (session.getAttribute("currentUser") == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
-        
-        String role = (String) session.getAttribute("userRole");
-        if (!"LIBRARIAN".equals(role)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-        }
-
-        try {
-            bookService.deleteBook(id);
-            return ResponseEntity.noContent().build();
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.notFound().build();
-        }
+    @RequireRole(ROLE_LIBRARIAN)
+    public ResponseEntity<Void> delete(@PathVariable String id) {
+        bookService.deleteBook(id);
+        return ResponseEntity.noContent().build();
     }
 
-    // 6. Выдать книгу (Для всех авторизованных)
+    // Выдать книгу
     @PostMapping("/{id}/borrow")
-    public ResponseEntity<?> borrowBook(@PathVariable String id, HttpSession session) {
-        if (session.getAttribute("currentUser") == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
-        try {
-            Book book = bookService.borrowBook(id);
-            return ResponseEntity.ok(book);
-        } catch (IllegalStateException | IllegalArgumentException e) {
-            return ResponseEntity.badRequest().build();
-        }
+    public Book borrowBook(@PathVariable String id) {
+        return bookService.borrowBook(id);
     }
 
-    // 7. Возврат книги (Для всех авторизованных)
+    // Вернуть книгу
     @PostMapping("/{id}/return")
-    public ResponseEntity<?> returnBook(@PathVariable String id, HttpSession session) {
-        if (session.getAttribute("currentUser") == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
-        try {
-            Book book = bookService.returnBook(id);
-            return ResponseEntity.ok(book);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.notFound().build();
-        }
+    public Book returnBook(@PathVariable String id) {
+        return bookService.returnBook(id);
     }
 }
