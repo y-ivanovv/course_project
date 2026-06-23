@@ -40,7 +40,7 @@ flowchart LR
 Скриншоты экранов добавляются в `docs/08-ui/web/` и вставляются относительными ссылками:
 
 ```markdown
-![Экран входа](web/login.png)
+![Экран входа](web/login.PNG)
 ![Экран регистрации](web/reg.png)
 ![Каталог и поиск](web/catalog.png)
 ![Карточка книги](web/book-details.png)
