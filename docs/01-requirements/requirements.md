@@ -7,7 +7,7 @@ flowchart TB
     User([Читатель])
     Lib([Библиотекарь])
 
-    subgraph Система «Library»
+    subgraph Система Library
         UC1(Регистрация)
         UC2(Вход / выход)
         UC3(Просмотр каталога с пагинацией)
