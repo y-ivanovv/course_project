@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="ru"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DataInitializer.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">library-core</a> &gt; <a href="index.source.html" class="el_package">ru.edu.project.foundation.config</a> &gt; <span class="el_source">DataInitializer.java</span></div><h1>DataInitializer.java</h1><pre class="source lang-java linenums">package ru.edu.project.foundation.config;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.stereotype.Component;
+
+import ru.edu.project.mediator.interfaces.UserService;
+
+/**
+ * Создаёт стартовую учётную запись библиотекаря при запуске приложения,
+ * если её ещё нет. Пароль хешируется автоматически (BCrypt), поэтому ручная
+ * вставка в БД больше не нужна. Управляется свойствами app.admin.* .
+ */
+@Component
+public class DataInitializer implements CommandLineRunner {
+
+<span class="nc" id="L19">    private static final Logger log = LoggerFactory.getLogger(DataInitializer.class);</span>
+
+    private final UserService userService;
+
+    @Value(&quot;${app.admin.enabled:false}&quot;)
+    private boolean enabled;
+
+    @Value(&quot;${app.admin.email:}&quot;)
+    private String email;
+
+    @Value(&quot;${app.admin.password:}&quot;)
+    private String password;
+
+    @Value(&quot;${app.admin.name:Администратор}&quot;)
+    private String name;
+
+<span class="nc" id="L35">    public DataInitializer(UserService userService) {</span>
+<span class="nc" id="L36">        this.userService = userService;</span>
+<span class="nc" id="L37">    }</span>
+
+    @Override
+    public void run(String... args) {
+<span class="nc bnc" id="L41" title="All 6 branches missed.">        if (!enabled || email.isBlank() || password.isBlank()) {</span>
+<span class="nc" id="L42">            return;</span>
+        }
+<span class="nc bnc" id="L44" title="All 2 branches missed.">        if (userService.getUserByEmail(email).isPresent()) {</span>
+<span class="nc" id="L45">            log.info(&quot;Стартовая учётная запись библиотекаря {} уже существует — пропускаю создание&quot;, email);</span>
+<span class="nc" id="L46">            return;</span>
+        }
+<span class="nc" id="L48">        userService.registerLibrarian(email, password, name);</span>
+<span class="nc" id="L49">        log.warn(&quot;Создана стартовая учётная запись БИБЛИОТЕКАРЯ: {} — ОБЯЗАТЕЛЬНО смените пароль!&quot;, email);</span>
+<span class="nc" id="L50">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

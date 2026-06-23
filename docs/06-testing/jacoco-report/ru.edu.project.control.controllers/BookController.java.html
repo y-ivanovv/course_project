@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="ru"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BookController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">library-core</a> &gt; <a href="index.source.html" class="el_package">ru.edu.project.control.controllers</a> &gt; <span class="el_source">BookController.java</span></div><h1>BookController.java</h1><pre class="source lang-java linenums">package ru.edu.project.control.controllers;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import jakarta.servlet.http.HttpSession;
+import jakarta.validation.Valid;
+import ru.edu.project.control.dto.BookCreateRequest;
+import ru.edu.project.control.dto.BookSearchRequest;
+import ru.edu.project.control.dto.PageResponse;
+import ru.edu.project.entity.Book;
+import ru.edu.project.entity.Loan;
+import ru.edu.project.foundation.security.AuthInterceptor;
+import ru.edu.project.foundation.security.RequireRole;
+import ru.edu.project.mediator.interfaces.BookService;
+import ru.edu.project.mediator.interfaces.LoanService;
+
+/**
+ * Авторизация (наличие сессии + роли) обеспечивается AuthInterceptor,
+ * обработка ошибок — GlobalExceptionHandler. Контроллер содержит только маршрутизацию.
+ */
+@RestController
+@RequestMapping(&quot;/api/books&quot;)
+public class BookController {
+
+    private static final String ROLE_LIBRARIAN = &quot;LIBRARIAN&quot;;
+    private static final int DEFAULT_LIMIT = 12;
+    private static final int MAX_LIMIT = 100;
+
+    private final BookService bookService;
+    private final LoanService loanService;
+
+    @Autowired
+<span class="nc" id="L44">    public BookController(BookService bookService, LoanService loanService) {</span>
+<span class="nc" id="L45">        this.bookService = bookService;</span>
+<span class="nc" id="L46">        this.loanService = loanService;</span>
+<span class="nc" id="L47">    }</span>
+
+    // Постраничный список книг
+    @GetMapping
+    public PageResponse&lt;Book&gt; getAll(
+            @RequestParam(defaultValue = &quot;0&quot;) int offset,
+            @RequestParam(defaultValue = &quot;12&quot;) int limit) {
+<span class="nc" id="L54">        int safeLimit = clampLimit(limit);</span>
+<span class="nc" id="L55">        int safeOffset = Math.max(offset, 0);</span>
+<span class="nc" id="L56">        return PageResponse.of(bookService.getBooks(toPageable(safeOffset, safeLimit)), safeOffset, safeLimit);</span>
+    }
+
+    // Получить книгу по ID
+    @GetMapping(&quot;/{id}&quot;)
+    public ResponseEntity&lt;Book&gt; getById(@PathVariable String id) {
+<span class="nc" id="L62">        return bookService.getBookById(id)</span>
+<span class="nc" id="L63">                .map(ResponseEntity::ok)</span>
+<span class="nc" id="L64">                .orElseGet(() -&gt; ResponseEntity.notFound().build());</span>
+    }
+
+    // Постраничный полнотекстовый поиск
+    @PostMapping(&quot;/search&quot;)
+    public PageResponse&lt;Book&gt; search(
+            @Valid @RequestBody BookSearchRequest request,
+            @RequestParam(defaultValue = &quot;0&quot;) int offset,
+            @RequestParam(defaultValue = &quot;12&quot;) int limit) {
+<span class="nc" id="L73">        int safeLimit = clampLimit(limit);</span>
+<span class="nc" id="L74">        int safeOffset = Math.max(offset, 0);</span>
+<span class="nc" id="L75">        return PageResponse.of(</span>
+<span class="nc" id="L76">                bookService.searchBooks(request.getQuery(), toPageable(safeOffset, safeLimit)),</span>
+                safeOffset, safeLimit);
+    }
+
+    // Создание книги (только LIBRARIAN)
+    @PostMapping
+    @RequireRole(ROLE_LIBRARIAN)
+    public Book create(@Valid @RequestBody BookCreateRequest request) {
+<span class="nc" id="L84">        return bookService.addBook(</span>
+<span class="nc" id="L85">                request.getTitle(),</span>
+<span class="nc" id="L86">                request.getAuthor(),</span>
+<span class="nc" id="L87">                request.getIsbn(),</span>
+<span class="nc" id="L88">                request.getDescription(),</span>
+<span class="nc" id="L89">                request.getGenre());</span>
+    }
+
+    // Удаление книги по ID (только LIBRARIAN)
+    @DeleteMapping(&quot;/{id}&quot;)
+    @RequireRole(ROLE_LIBRARIAN)
+    public ResponseEntity&lt;Void&gt; delete(@PathVariable String id) {
+<span class="nc" id="L96">        bookService.deleteBook(id);</span>
+<span class="nc" id="L97">        return ResponseEntity.noContent().build();</span>
+    }
+
+    // Удаление книги по ISBN (только LIBRARIAN)
+    @DeleteMapping(&quot;/by-isbn/{isbn}&quot;)
+    @RequireRole(ROLE_LIBRARIAN)
+    public ResponseEntity&lt;Void&gt; deleteByIsbn(@PathVariable String isbn) {
+<span class="nc" id="L104">        bookService.deleteByIsbn(isbn);</span>
+<span class="nc" id="L105">        return ResponseEntity.noContent().build();</span>
+    }
+
+    // Выдать книгу текущему пользователю
+    @PostMapping(&quot;/{id}/borrow&quot;)
+    public Loan borrowBook(@PathVariable String id, HttpSession session) {
+<span class="nc" id="L111">        return loanService.borrowBook(id, currentUserId(session));</span>
+    }
+
+    // Вернуть книгу (только тот, кто её взял)
+    @PostMapping(&quot;/{id}/return&quot;)
+    public Loan returnBook(@PathVariable String id, HttpSession session) {
+<span class="nc" id="L117">        return loanService.returnBook(id, currentUserId(session));</span>
+    }
+
+    private Long currentUserId(HttpSession session) {
+<span class="nc" id="L121">        return (Long) session.getAttribute(AuthInterceptor.SESSION_USER);</span>
+    }
+
+    private int clampLimit(int limit) {
+<span class="nc bnc" id="L125" title="All 2 branches missed.">        if (limit &lt; 1) {</span>
+<span class="nc" id="L126">            return DEFAULT_LIMIT;</span>
+        }
+<span class="nc" id="L128">        return Math.min(limit, MAX_LIMIT);</span>
+    }
+
+    private Pageable toPageable(int offset, int limit) {
+        // Преобразуем offset/limit в постраничный запрос Spring Data
+<span class="nc" id="L133">        return PageRequest.of(offset / limit, limit);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

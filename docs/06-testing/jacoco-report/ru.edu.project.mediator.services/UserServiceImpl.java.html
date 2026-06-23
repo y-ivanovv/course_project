@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="ru"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>UserServiceImpl.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">library-core</a> &gt; <a href="index.source.html" class="el_package">ru.edu.project.mediator.services</a> &gt; <span class="el_source">UserServiceImpl.java</span></div><h1>UserServiceImpl.java</h1><pre class="source lang-java linenums">package ru.edu.project.mediator.services;
+
+import java.util.Optional;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import ru.edu.project.entity.User;
+import ru.edu.project.foundation.repositories.UserRepository;
+import ru.edu.project.mediator.exceptions.DuplicateResourceException;
+import ru.edu.project.mediator.exceptions.ResourceNotFoundException;
+import ru.edu.project.mediator.interfaces.UserService;
+
+@Service
+public class UserServiceImpl implements UserService {
+
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
+
+    @Autowired
+<span class="fc" id="L23">    public UserServiceImpl(UserRepository userRepository, PasswordEncoder passwordEncoder) {</span>
+<span class="fc" id="L24">        this.userRepository = userRepository;</span>
+<span class="fc" id="L25">        this.passwordEncoder = passwordEncoder;</span>
+<span class="fc" id="L26">    }</span>
+
+    @Override
+    @Transactional
+    public User registerUser(String email, String password, String name) {
+<span class="fc" id="L31">        return createUser(email, password, name, &quot;USER&quot;);</span>
+    }
+
+    @Override
+    @Transactional
+    public User registerLibrarian(String email, String password, String name) {
+<span class="fc" id="L37">        return createUser(email, password, name, &quot;LIBRARIAN&quot;);</span>
+    }
+
+    private User createUser(String email, String password, String name, String role) {
+<span class="fc bfc" id="L41" title="All 2 branches covered.">        if (userRepository.findByEmail(email).isPresent()) {</span>
+<span class="fc" id="L42">            throw new DuplicateResourceException(&quot;Пользователь с таким email уже существует!&quot;);</span>
+        }
+        // Пароль хранится только в виде BCrypt-хеша
+<span class="fc" id="L45">        User user = new User(email, passwordEncoder.encode(password), name);</span>
+<span class="fc" id="L46">        user.setRole(role);</span>
+<span class="fc" id="L47">        return userRepository.save(user);</span>
+    }
+
+    @Override
+    public Optional&lt;User&gt; authenticate(String email, String rawPassword) {
+<span class="fc" id="L52">        return userRepository.findByEmail(email)</span>
+<span class="fc" id="L53">                .filter(user -&gt; passwordEncoder.matches(rawPassword, user.getPasswordHash()));</span>
+    }
+
+    @Override
+    public Optional&lt;User&gt; getUserByEmail(String email) {
+<span class="nc" id="L58">        return userRepository.findByEmail(email);</span>
+    }
+
+    @Override
+    public Optional&lt;User&gt; getUserById(Long id) {
+<span class="nc" id="L63">        return userRepository.findById(id);</span>
+    }
+
+    @Override
+    @Transactional
+    public User updateUserName(Long id, String newName) {
+<span class="fc" id="L69">        User user = userRepository.findById(id)</span>
+<span class="pc" id="L70">                .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;Пользователь не найден&quot;));</span>
+        
+        // Вызов бизнес-метода из слоя Entity
+<span class="nc" id="L73">        user.changeName(newName); </span>
+        
+<span class="nc" id="L75">        return userRepository.save(user);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

@@ -5,6 +5,8 @@
 **Направление:** 09.03.04 «Программная инженерия», профиль «Разработка и сопровождение ПО»
 **Траектория:** Б — Веб-ориентированная (React + Spring Boot)
 **Дисциплина:** Программная инженерия (курсовой проект)
+**Руководитель:** Свистунов И. В.
+**Репозиторий:** https://github.com/y-ivanovv/course_project
 
 ## Описание проекта
 
@@ -73,10 +75,11 @@ npm run dev                  # http://localhost:5173
 
 ```bash
 cd library-backend
-mvn test "-Dtest=BookServiceImplTest,UserServiceImplTest,LoanServiceImplTest"   # быстрые юнит-тесты
+mvn test "-Dtest=BookServiceImplTest,UserServiceImplTest,LoanServiceImplTest,GlobalExceptionHandlerTest,AuthInterceptorTest,DtoTest"
 mvn test                                                                          # все тесты (нужен Docker)
 ```
-Отчёт о покрытии (JaCoCo): `library-backend/target/site/jacoco/index.html`.
+32 модульных теста. Отчёт о покрытии (JaCoCo) — в [docs/06-testing/jacoco-report](docs/06-testing/jacoco-report/index.html),
+сводка — [coverage-summary.md](docs/06-testing/coverage-summary.md) (покрытие 45.7%, ядро ~80%).
 
 ## Структура репозитория
 
@@ -118,6 +121,12 @@ library-project/
 | 10. Развёртывание | [docs/10-deployment](docs/10-deployment/deployment.md) |
 | 11. Руководство пользователя | [docs/11-user-guide](docs/11-user-guide/user-guide.md) |
 | 12. Пояснительная записка | [docs/12-final-report](docs/12-final-report/explanatory-note.md) |
+
+### Дополнительные документы
+- [Техническое задание](docs/01-requirements/technical-specification.md)
+- [Отчёт о покрытии тестами (JaCoCo)](docs/06-testing/coverage-summary.md) · [HTML-отчёт](docs/06-testing/jacoco-report/index.html)
+- [Отчёт статического анализа (Checkstyle + ESLint)](docs/07-refactoring/static-analysis.md)
+- [Архитектурные решения (ADR)](docs/02-architecture/architecture.md#5-архитектурные-решения-adr)
 
 ## Статистика разработки
 

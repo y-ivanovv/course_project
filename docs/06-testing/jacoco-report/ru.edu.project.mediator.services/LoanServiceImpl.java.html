@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="ru"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>LoanServiceImpl.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">library-core</a> &gt; <a href="index.source.html" class="el_package">ru.edu.project.mediator.services</a> &gt; <span class="el_source">LoanServiceImpl.java</span></div><h1>LoanServiceImpl.java</h1><pre class="source lang-java linenums">package ru.edu.project.mediator.services;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import ru.edu.project.entity.Book;
+import ru.edu.project.entity.Loan;
+import ru.edu.project.foundation.repositories.BookRepository;
+import ru.edu.project.foundation.repositories.LoanRepository;
+import ru.edu.project.mediator.exceptions.ForbiddenOperationException;
+import ru.edu.project.mediator.exceptions.ResourceNotFoundException;
+import ru.edu.project.mediator.interfaces.LoanService;
+
+/**
+ * Логика выдачи/возврата книг. Связь «книга — пользователь» хранится в таблице loans (PostgreSQL),
+ * статус доступности книги — в Elasticsearch. Источник правды о том, кто держит книгу, — таблица loans.
+ *
+ * Примечание: PostgreSQL и Elasticsearch не делят единую транзакцию. Запись о выдаче (PostgreSQL)
+ * фиксируется в рамках @Transactional; обновление статуса в Elasticsearch выполняется в том же методе,
+ * и при его сбое транзакция PostgreSQL откатывается.
+ */
+@Service
+public class LoanServiceImpl implements LoanService {
+
+    private final BookRepository bookRepository;
+    private final LoanRepository loanRepository;
+
+    @Autowired
+<span class="fc" id="L30">    public LoanServiceImpl(BookRepository bookRepository, LoanRepository loanRepository) {</span>
+<span class="fc" id="L31">        this.bookRepository = bookRepository;</span>
+<span class="fc" id="L32">        this.loanRepository = loanRepository;</span>
+<span class="fc" id="L33">    }</span>
+
+    @Override
+    @Transactional
+    public Loan borrowBook(String bookId, Long userId) {
+<span class="fc" id="L38">        Book book = bookRepository.findById(bookId)</span>
+<span class="pc" id="L39">                .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;Книга не найдена&quot;));</span>
+
+<span class="fc" id="L41">        loanRepository.findByBookIdAndReturnedAtIsNull(bookId).ifPresent(active -&gt; {</span>
+<span class="fc" id="L42">            throw new IllegalStateException(&quot;Книга уже выдана&quot;);</span>
+        });
+
+        // Инвариант статуса проверяется и устанавливается в самой сущности
+<span class="fc" id="L46">        book.borrowBook();</span>
+<span class="fc" id="L47">        bookRepository.save(book);</span>
+
+<span class="fc" id="L49">        return loanRepository.save(new Loan(bookId, userId));</span>
+    }
+
+    @Override
+    @Transactional
+    public Loan returnBook(String bookId, Long userId) {
+<span class="fc" id="L55">        Loan loan = loanRepository.findByBookIdAndReturnedAtIsNull(bookId)</span>
+<span class="fc" id="L56">                .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;Активная выдача книги не найдена&quot;));</span>
+
+        // Ключевая проверка: вернуть книгу может только тот, кто её взял
+<span class="fc bfc" id="L59" title="All 2 branches covered.">        if (!loan.getUserId().equals(userId)) {</span>
+<span class="fc" id="L60">            throw new ForbiddenOperationException(&quot;Вернуть книгу может только пользователь, который её взял&quot;);</span>
+        }
+
+<span class="fc" id="L63">        Book book = bookRepository.findById(bookId)</span>
+<span class="pc" id="L64">                .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;Книга не найдена&quot;));</span>
+<span class="fc" id="L65">        book.returnBook();</span>
+<span class="fc" id="L66">        bookRepository.save(book);</span>
+
+<span class="fc" id="L68">        loan.markReturned();</span>
+<span class="fc" id="L69">        return loanRepository.save(loan);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

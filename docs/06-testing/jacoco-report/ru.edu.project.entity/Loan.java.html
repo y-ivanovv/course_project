@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="ru"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Loan.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">library-core</a> &gt; <a href="index.source.html" class="el_package">ru.edu.project.entity</a> &gt; <span class="el_source">Loan.java</span></div><h1>Loan.java</h1><pre class="source lang-java linenums">package ru.edu.project.entity;
+
+import java.time.LocalDateTime;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+
+/**
+ * Факт выдачи книги конкретному пользователю.
+ * Хранится в PostgreSQL и является источником правды о том, кто держит книгу.
+ * Активная (невозвращённая) выдача — это запись с returnedAt == null.
+ */
+@Entity
+@Table(name = &quot;loans&quot;)
+public class Loan {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    // Идентификатор книги в Elasticsearch (строковый)
+    @Column(name = &quot;book_id&quot;, nullable = false)
+    private String bookId;
+
+    @Column(name = &quot;user_id&quot;, nullable = false)
+    private Long userId;
+
+    @Column(name = &quot;borrowed_at&quot;, nullable = false)
+    private LocalDateTime borrowedAt;
+
+    @Column(name = &quot;returned_at&quot;)
+    private LocalDateTime returnedAt;
+
+    // Пустой конструктор (требование JPA)
+<span class="nc" id="L39">    protected Loan() {}</span>
+
+<span class="fc" id="L41">    public Loan(String bookId, Long userId) {</span>
+<span class="fc" id="L42">        this.bookId = bookId;</span>
+<span class="fc" id="L43">        this.userId = userId;</span>
+<span class="fc" id="L44">        this.borrowedAt = LocalDateTime.now();</span>
+<span class="fc" id="L45">    }</span>
+
+    public boolean isActive() {
+<span class="pc bpc" id="L48" title="1 of 2 branches missed.">        return returnedAt == null;</span>
+    }
+
+    /**
+     * Бизнес-метод: фиксирует возврат книги.
+     */
+    public void markReturned() {
+<span class="pc bpc" id="L55" title="1 of 2 branches missed.">        if (!isActive()) {</span>
+<span class="nc" id="L56">            throw new IllegalStateException(&quot;Книга уже возвращена&quot;);</span>
+        }
+<span class="fc" id="L58">        this.returnedAt = LocalDateTime.now();</span>
+<span class="fc" id="L59">    }</span>
+
+<span class="nc" id="L61">    public Long getId() { return id; }</span>
+<span class="fc" id="L62">    public String getBookId() { return bookId; }</span>
+<span class="fc" id="L63">    public Long getUserId() { return userId; }</span>
+<span class="nc" id="L64">    public LocalDateTime getBorrowedAt() { return borrowedAt; }</span>
+<span class="fc" id="L65">    public LocalDateTime getReturnedAt() { return returnedAt; }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

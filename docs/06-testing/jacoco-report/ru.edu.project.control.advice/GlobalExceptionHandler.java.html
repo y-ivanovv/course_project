@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="ru"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GlobalExceptionHandler.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">library-core</a> &gt; <a href="index.source.html" class="el_package">ru.edu.project.control.advice</a> &gt; <span class="el_source">GlobalExceptionHandler.java</span></div><h1>GlobalExceptionHandler.java</h1><pre class="source lang-java linenums">package ru.edu.project.control.advice;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
+
+import ru.edu.project.control.dto.ErrorResponse;
+import ru.edu.project.mediator.exceptions.DuplicateResourceException;
+import ru.edu.project.mediator.exceptions.ForbiddenOperationException;
+import ru.edu.project.mediator.exceptions.ResourceNotFoundException;
+
+/**
+ * Централизованная обработка ошибок: контроллеры больше не содержат try/catch.
+ * Порядок объявления важен — более специфичные исключения обрабатываются раньше.
+ */
+@RestControllerAdvice
+<span class="fc" id="L23">public class GlobalExceptionHandler {</span>
+
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity&lt;ErrorResponse&gt; handleNotFound(ResourceNotFoundException ex) {
+<span class="fc" id="L27">        return build(HttpStatus.NOT_FOUND, ex.getMessage());</span>
+    }
+
+    @ExceptionHandler(DuplicateResourceException.class)
+    public ResponseEntity&lt;ErrorResponse&gt; handleDuplicate(DuplicateResourceException ex) {
+<span class="fc" id="L32">        return build(HttpStatus.CONFLICT, ex.getMessage());</span>
+    }
+
+    @ExceptionHandler(ForbiddenOperationException.class)
+    public ResponseEntity&lt;ErrorResponse&gt; handleForbidden(ForbiddenOperationException ex) {
+<span class="fc" id="L37">        return build(HttpStatus.FORBIDDEN, ex.getMessage());</span>
+    }
+
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity&lt;ErrorResponse&gt; handleIllegalState(IllegalStateException ex) {
+<span class="fc" id="L42">        return build(HttpStatus.CONFLICT, ex.getMessage());</span>
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity&lt;ErrorResponse&gt; handleIllegalArgument(IllegalArgumentException ex) {
+<span class="fc" id="L47">        return build(HttpStatus.BAD_REQUEST, ex.getMessage());</span>
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity&lt;ErrorResponse&gt; handleValidation(MethodArgumentNotValidException ex) {
+<span class="fc" id="L52">        Map&lt;String, String&gt; fields = new HashMap&lt;&gt;();</span>
+<span class="fc bfc" id="L53" title="All 2 branches covered.">        for (FieldError fe : ex.getBindingResult().getFieldErrors()) {</span>
+<span class="fc" id="L54">            fields.put(fe.getField(), fe.getDefaultMessage());</span>
+<span class="fc" id="L55">        }</span>
+<span class="fc" id="L56">        ErrorResponse body = new ErrorResponse(</span>
+<span class="fc" id="L57">                HttpStatus.BAD_REQUEST.value(),</span>
+<span class="fc" id="L58">                HttpStatus.BAD_REQUEST.getReasonPhrase(),</span>
+                &quot;Ошибка валидации запроса&quot;,
+                fields);
+<span class="fc" id="L61">        return ResponseEntity.badRequest().body(body);</span>
+    }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity&lt;ErrorResponse&gt; handleUnexpected(Exception ex) {
+<span class="fc" id="L66">        return build(HttpStatus.INTERNAL_SERVER_ERROR, &quot;Внутренняя ошибка сервера&quot;);</span>
+    }
+
+    private ResponseEntity&lt;ErrorResponse&gt; build(HttpStatus status, String message) {
+<span class="fc" id="L70">        return ResponseEntity.status(status)</span>
+<span class="fc" id="L71">                .body(new ErrorResponse(status.value(), status.getReasonPhrase(), message));</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

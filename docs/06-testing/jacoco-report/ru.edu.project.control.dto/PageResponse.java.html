@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="ru"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PageResponse.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">library-core</a> &gt; <a href="index.source.html" class="el_package">ru.edu.project.control.dto</a> &gt; <span class="el_source">PageResponse.java</span></div><h1>PageResponse.java</h1><pre class="source lang-java linenums">package ru.edu.project.control.dto;
+
+import java.util.List;
+
+import org.springframework.data.domain.Page;
+
+/**
+ * Стабильный формат страничного ответа (вместо прямой сериализации Spring Page).
+ */
+public class PageResponse&lt;T&gt; {
+
+    private final List&lt;T&gt; content;
+    private final long total;
+    private final int offset;
+    private final int limit;
+
+<span class="fc" id="L17">    public PageResponse(List&lt;T&gt; content, long total, int offset, int limit) {</span>
+<span class="fc" id="L18">        this.content = content;</span>
+<span class="fc" id="L19">        this.total = total;</span>
+<span class="fc" id="L20">        this.offset = offset;</span>
+<span class="fc" id="L21">        this.limit = limit;</span>
+<span class="fc" id="L22">    }</span>
+
+    public static &lt;T&gt; PageResponse&lt;T&gt; of(Page&lt;T&gt; page, int offset, int limit) {
+<span class="fc" id="L25">        return new PageResponse&lt;&gt;(page.getContent(), page.getTotalElements(), offset, limit);</span>
+    }
+
+<span class="fc" id="L28">    public List&lt;T&gt; getContent() { return content; }</span>
+<span class="fc" id="L29">    public long getTotal() { return total; }</span>
+<span class="fc" id="L30">    public int getOffset() { return offset; }</span>
+<span class="fc" id="L31">    public int getLimit() { return limit; }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>
