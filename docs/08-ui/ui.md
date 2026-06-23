@@ -41,6 +41,7 @@ flowchart LR
 
 ```markdown
 ![Экран входа](web/login.png)
+![Экран регистрации](web/reg.png)
 ![Каталог и поиск](web/catalog.png)
 ![Карточка книги](web/book-details.png)
 ![Панель библиотекаря](web/admin.png)
