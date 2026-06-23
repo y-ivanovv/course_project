@@ -37,8 +37,8 @@ flowchart LR
 
 ## 4. Скриншоты
 
-![Экран входа](web/login.png)
-![Экран регистрации](web/reg.png)
-![Каталог и поиск](web/catalog.png)
-![Карточка книги](web/book-details.png)
-![Панель библиотекаря](web/admin.png)
+![Экран входа](web/login.PNG)
+![Экран регистрации](web/reg.PNG)
+![Каталог и поиск](web/catalog.PNG)
+![Карточка книги](web/book-details.PNG)
+![Панель библиотекаря](web/admin.PNG)
